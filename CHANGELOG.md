@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.2 · 2026-04-22
+
+### Added
+
+- Re-export `MfaErrorCode` from the main entry. The type was added in v0.2.0 but only available via internal path. Consumers can now `import type { MfaErrorCode } from "@socios-ai/auth"`.
+
+### Backwards compatibility
+
+Fully backwards compatible. Pure addition.
+
 ## v0.2.1 · 2026-04-22
 
 ### Bug fixes

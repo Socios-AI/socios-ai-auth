@@ -7,4 +7,4 @@ export type { ResetFormInput } from "./validation";
 export { getSupabaseBrowserClient } from "./browser/client";
 export type { GetBrowserClientOptions } from "./browser/client";
 
-export type { AuthErrorCode } from "./types";
+export type { AuthErrorCode, MfaErrorCode } from "./types";
