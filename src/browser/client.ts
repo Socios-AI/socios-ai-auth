@@ -13,6 +13,20 @@ export type GetBrowserClientOptions = {
   cookieOptions?: CookieOptions;
 };
 
+function readCookieOptionsFromEnv(): CookieOptions | undefined {
+  const domain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+  if (!domain) return undefined;
+  const opts: CookieOptions = { domain };
+  const sameSite = process.env.NEXT_PUBLIC_COOKIE_SAMESITE;
+  if (sameSite === "lax" || sameSite === "strict" || sameSite === "none") {
+    opts.sameSite = sameSite;
+  }
+  const secure = process.env.NEXT_PUBLIC_COOKIE_SECURE;
+  if (secure === "true") opts.secure = true;
+  if (secure === "false") opts.secure = false;
+  return opts;
+}
+
 export function getSupabaseBrowserClient(opts: GetBrowserClientOptions = {}): SupabaseClient {
   const url =
     opts.url ??
@@ -27,8 +41,9 @@ export function getSupabaseBrowserClient(opts: GetBrowserClientOptions = {}): Su
     throw new Error("Missing Supabase URL or anon key");
   }
 
-  if (opts.cookieOptions) {
-    return createBrowserClient(url, anonKey, { cookieOptions: opts.cookieOptions });
+  const cookieOptions = opts.cookieOptions ?? readCookieOptionsFromEnv();
+  if (cookieOptions) {
+    return createBrowserClient(url, anonKey, { cookieOptions });
   }
   return createBrowserClient(url, anonKey);
 }
