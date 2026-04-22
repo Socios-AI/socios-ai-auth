@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.1 · 2026-04-22
+
+### Bug fixes
+
+- `getSupabaseBrowserClient`: when `opts.cookieOptions` is not provided, the function now falls back to reading `NEXT_PUBLIC_COOKIE_DOMAIN`, `NEXT_PUBLIC_COOKIE_SAMESITE`, `NEXT_PUBLIC_COOKIE_SECURE` environment variables. This is required so that the package's internal calls (from `useLogin`, `useResetPassword`, etc.) and the consumer's app share the same cookie configuration. Without this, login from the package would set cookies in one scope while the consumer reads from another, breaking SSO.
+
+### Backwards compatibility
+
+Fully backwards compatible. v0.2.0 consumers without the env vars get default behavior unchanged.
+
 ## v0.2.0 · 2026-04-22
 
 Additions for Plan E (Meta-Admin panel + login/MFA UI).
