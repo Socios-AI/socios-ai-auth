@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.2.0 · 2026-04-22
+
+Additions for Plan E (Meta-Admin panel + login/MFA UI).
+
+### Added
+
+- `useLogin` hook: email+password login with MFA detection. Reads user's TOTP factors after sign-in and signals `mfa-required` state if a verified factor exists.
+- `useMfaEnroll` hook: one-shot TOTP enrollment. Returns `qrCodeSvg`, `secret`, `otpauthUri`. `submit(code)` runs challenge + verify.
+- `useMfaChallenge` hook: post-login step-up authentication.
+- `useImpersonationGate` hook: reads JWT claims, exposes `canImpersonate`, `needsMfaChallenge`, `isSuper`.
+- `getSupabaseBrowserClient({cookieOptions: {domain, secure, sameSite}})`: enables cross-subdomain cookies.
+- Admin wrappers in `@socios-ai/auth/admin`:
+  - `startImpersonation`, `endImpersonation` (require `callerJwt` because the RPCs check `auth.uid()`)
+  - `forceLogout` (requires `callerJwt`)
+  - `grantMembership`, `revokeMembership` (require `callerJwt`)
+  - `createUserWithMembership` (uses service role, includes invite link generation with email_exists fallback)
+- New `MfaErrorCode` type. `AuthErrorCode` extended with `INVALID_CREDENTIALS`, `EMAIL_NOT_CONFIRMED`, `RATE_LIMITED`.
+
+### Tests
+
+- 35 new vitest cases (hooks via renderHook; admin wrappers via msw v2 fixtures matching real Supabase API shapes).
+- Total package tests: 99.
+
+### Backwards compatibility
+
+Fully backwards compatible with v0.1.1. New parameters and exports only.
+
 ## v0.1.1 · 2026-04-22
 
 ### Bug fixes
