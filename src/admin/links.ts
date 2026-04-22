@@ -12,10 +12,8 @@ export class AuthAdminError extends Error {
 }
 
 type GenerateLinkResponse = {
-  properties: {
-    action_link: string;
-    hashed_token: string;
-  };
+  action_link: string;
+  hashed_token: string;
 };
 
 type GenerateLinkErrorBody = {
@@ -43,7 +41,7 @@ async function callGenerateLink(args: {
     body: JSON.stringify({
       type: args.type,
       email: args.email,
-      options: { redirect_to: args.redirectTo },
+      redirect_to: args.redirectTo,
     }),
   }).catch((err) => {
     throw new AuthAdminError(`Network error: ${err.message}`, "UNKNOWN", 0);
@@ -73,8 +71,8 @@ export async function generateRecoveryLink(args: {
   getSupabaseAdminClient();
   const res = await callGenerateLink({ type: "recovery", email: args.email, redirectTo: args.redirectTo });
   return {
-    actionLink: res.properties.action_link,
-    hashedToken: res.properties.hashed_token,
+    actionLink: res.action_link,
+    hashedToken: res.hashed_token,
   };
 }
 
@@ -89,16 +87,16 @@ export async function generateInviteLink(args: {
   try {
     const res = await callGenerateLink({ type: "invite", email: args.email, redirectTo: args.redirectTo });
     return {
-      actionLink: res.properties.action_link,
-      hashedToken: res.properties.hashed_token,
+      actionLink: res.action_link,
+      hashedToken: res.hashed_token,
       usedFallback: false,
     };
   } catch (err) {
     if (err instanceof AuthAdminError && err.code === "EMAIL_EXISTS" && fallback) {
       const res = await callGenerateLink({ type: "recovery", email: args.email, redirectTo: args.redirectTo });
       return {
-        actionLink: res.properties.action_link,
-        hashedToken: res.properties.hashed_token,
+        actionLink: res.action_link,
+        hashedToken: res.hashed_token,
         usedFallback: true,
       };
     }

@@ -21,14 +21,14 @@ describe("generateRecoveryLink", () => {
   it("returns actionLink and hashedToken on success", async () => {
     server.use(
       http.post(GENERATE_LINK_URL, async ({ request }) => {
-        const body = await request.json() as { type: string; email: string; options?: { redirect_to?: string } };
+        const body = await request.json() as { type: string; email: string; redirect_to?: string; options?: unknown };
         expect(body.type).toBe("recovery");
         expect(body.email).toBe("user@example.com");
+        expect(body.redirect_to).toBe("https://id.sociosai.com/set-password");
+        expect(body.options).toBeUndefined();
         return HttpResponse.json({
-          properties: {
-            action_link: "https://test.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://id.sociosai.com/set-password",
-            hashed_token: "abc",
-          },
+          action_link: "https://test.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://id.sociosai.com/set-password",
+          hashed_token: "abc",
         });
       }),
     );
@@ -46,10 +46,8 @@ describe("generateRecoveryLink", () => {
     server.use(
       http.post(GENERATE_LINK_URL, () => {
         return HttpResponse.json({
-          properties: {
-            action_link: "https://test.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://id.sociosai.com/set-password",
-            hashed_token: "abc",
-          },
+          action_link: "https://test.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://id.sociosai.com/set-password",
+          hashed_token: "abc",
         });
       }),
     );
@@ -76,10 +74,8 @@ describe("generateInviteLink", () => {
         const body = await request.json() as { type: string };
         expect(body.type).toBe("invite");
         return HttpResponse.json({
-          properties: {
-            action_link: "https://test.supabase.co/auth/v1/verify?token=invite&type=invite&redirect_to=https://id.sociosai.com/set-password",
-            hashed_token: "invite",
-          },
+          action_link: "https://test.supabase.co/auth/v1/verify?token=invite&type=invite&redirect_to=https://id.sociosai.com/set-password",
+          hashed_token: "invite",
         });
       }),
     );
@@ -108,10 +104,8 @@ describe("generateInviteLink", () => {
         }
         expect(body.type).toBe("recovery");
         return HttpResponse.json({
-          properties: {
-            action_link: "https://test.supabase.co/auth/v1/verify?token=rec&type=recovery&redirect_to=https://id.sociosai.com/set-password",
-            hashed_token: "rec",
-          },
+          action_link: "https://test.supabase.co/auth/v1/verify?token=rec&type=recovery&redirect_to=https://id.sociosai.com/set-password",
+          hashed_token: "rec",
         });
       }),
     );
