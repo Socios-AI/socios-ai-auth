@@ -11,7 +11,9 @@ type GateState = {
 
 function decodeJwt(token: string): Record<string, unknown> | null {
   try {
-    const [, payload] = token.split(".");
+    const parts = token.split(".");
+    const payload = parts[1];
+    if (!payload) return null;
     const decoded = typeof atob === "function"
       ? atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
       : Buffer.from(payload, "base64url").toString("utf-8");
