@@ -1,9 +1,16 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export type CookieOptions = {
+  domain?: string;
+  sameSite?: "lax" | "strict" | "none";
+  secure?: boolean;
+};
+
 export type GetBrowserClientOptions = {
   url?: string;
   anonKey?: string;
+  cookieOptions?: CookieOptions;
 };
 
 export function getSupabaseBrowserClient(opts: GetBrowserClientOptions = {}): SupabaseClient {
@@ -20,5 +27,8 @@ export function getSupabaseBrowserClient(opts: GetBrowserClientOptions = {}): Su
     throw new Error("Missing Supabase URL or anon key");
   }
 
+  if (opts.cookieOptions) {
+    return createBrowserClient(url, anonKey, { cookieOptions: opts.cookieOptions });
+  }
   return createBrowserClient(url, anonKey);
 }
