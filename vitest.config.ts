@@ -9,5 +9,10 @@ export default defineConfig({
     pool: "forks",
     poolOptions: { forks: { singleFork: true } },
     include: ["tests/**/*.test.{ts,tsx}"],
+    server: {
+      deps: {
+        inline: ["@supabase/ssr"],
+      },
+    },
   },
 });

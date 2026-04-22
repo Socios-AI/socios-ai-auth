@@ -77,6 +77,110 @@ console.log(actionLink);
 
 Reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from `process.env` by default.
 
+## Login + MFA hooks (v0.2.0)
+
+### `useLogin`
+
+```ts
+import { useLogin } from "@socios-ai/auth/react";
+
+function LoginForm() {
+  const { state, errorCode, mfaRequired, submit } = useLogin();
+  // state: "idle" | "submitting" | "success" | "mfa-required" | "error"
+  // mfaRequired: true if user has verified TOTP factor and JWT lacks amr=totp
+}
+```
+
+### `useMfaEnroll`
+
+```ts
+import { useMfaEnroll } from "@socios-ai/auth/react";
+
+function EnrollForm() {
+  const { state, qrCodeSvg, secret, otpauthUri, submit, errorCode } = useMfaEnroll();
+  // state: "loading" | "ready" | "submitting" | "success" | "error"
+  // submit(code) calls challenge + verify
+}
+```
+
+### `useMfaChallenge`
+
+```ts
+import { useMfaChallenge } from "@socios-ai/auth/react";
+
+function ChallengeForm() {
+  const { state, errorCode, submit } = useMfaChallenge();
+}
+```
+
+### `useImpersonationGate`
+
+```ts
+import { useImpersonationGate } from "@socios-ai/auth/react";
+
+function ImpersonateButton() {
+  const { isSuper, canImpersonate, needsMfaChallenge, refresh } = useImpersonationGate();
+  if (!isSuper) return null;
+  if (needsMfaChallenge) return <MfaChallengeForm onSuccess={refresh} />;
+  return <button disabled={!canImpersonate}>Impersonate</button>;
+}
+```
+
+## Admin RPC wrappers (v0.2.0)
+
+All call Plan A backend RPCs. RPCs that check `auth.uid()` require `callerJwt`.
+
+```ts
+import {
+  startImpersonation,
+  endImpersonation,
+  forceLogout,
+  grantMembership,
+  revokeMembership,
+  createUserWithMembership,
+} from "@socios-ai/auth/admin";
+
+const { sessionId, expiresAt } = await startImpersonation({
+  targetUserId: "uuid",
+  reason: "Investigating ticket #123",
+  callerJwt: req.headers.authorization?.replace(/^Bearer /, "") ?? "",
+});
+
+const { membershipId } = await grantMembership({
+  userId: "uuid",
+  appSlug: "case-predictor",
+  roleSlug: "partner-admin",
+  orgId: "uuid",
+  callerJwt: "...",
+});
+
+const { userId, actionLink } = await createUserWithMembership({
+  email: "new@user.com",
+  appSlug: "case-predictor",
+  roleSlug: "partner-admin",
+  orgId: "uuid",
+  redirectTo: "https://id.sociosai.com/set-password",
+});
+```
+
+`createUserWithMembership` uses service role internally (no `callerJwt` needed). All other admin wrappers require `callerJwt` because the underlying RPCs check `auth.uid()`.
+
+## Cross-subdomain cookies (v0.2.0)
+
+```ts
+import { getSupabaseBrowserClient } from "@socios-ai/auth";
+
+const supabase = getSupabaseBrowserClient({
+  cookieOptions: {
+    domain: ".sociosai.com",
+    secure: true,
+    sameSite: "lax",
+  },
+});
+```
+
+When `cookieOptions.domain` is set, sessions are visible across all subdomains of the configured domain. Useful when ID and admin apps share the same Supabase project.
+
 ## Versioning
 
 Pre-1.0. Minor bumps may include breaking changes. Always pin to a specific tag in
