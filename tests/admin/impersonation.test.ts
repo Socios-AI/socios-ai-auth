@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 
@@ -15,7 +15,7 @@ afterAll(() => server.close());
 describe("startImpersonation", () => {
   it("calls rpc/start_impersonation with caller JWT and maps response", async () => {
     let receivedAuth: string | null = null;
-    let receivedBody: any = null;
+    let receivedBody: unknown = null;
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/start_impersonation", async ({ request }) => {
         receivedAuth = request.headers.get("authorization");
@@ -57,7 +57,6 @@ describe("startImpersonation", () => {
       ),
     );
     const { startImpersonation } = await import("../../src/admin/impersonation");
-    const { AuthAdminError } = await import("../../src/admin/links");
     await expect(
       startImpersonation({ targetUserId: "t", reason: "test reason here", callerJwt: "j" }),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
@@ -73,7 +72,7 @@ describe("startImpersonation", () => {
 
 describe("endImpersonation", () => {
   it("calls rpc/end_impersonation with caller JWT and session id", async () => {
-    let receivedBody: any = null;
+    let receivedBody: unknown = null;
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/end_impersonation", async ({ request }) => {
         receivedBody = await request.json();

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 
@@ -14,7 +14,7 @@ afterAll(() => server.close());
 
 describe("grantMembership", () => {
   it("calls rpc/grant_membership and returns membership id", async () => {
-    let body: any = null;
+    let body: unknown = null;
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/grant_membership", async ({ request }) => {
         body = await request.json();
@@ -39,7 +39,7 @@ describe("grantMembership", () => {
   });
 
   it("omits p_org_id from request body when orgId is undefined", async () => {
-    let body: any = null;
+    let body: unknown = null;
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/grant_membership", async ({ request }) => {
         body = await request.json();

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 
@@ -14,7 +14,7 @@ afterAll(() => server.close());
 
 describe("createUserWithMembership", () => {
   it("calls rpc/create_user_with_membership then generates invite link", async () => {
-    let rpcBody: any = null;
+    let rpcBody: unknown = null;
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/create_user_with_membership", async ({ request }) => {
         rpcBody = await request.json();

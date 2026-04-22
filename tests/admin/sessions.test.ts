@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 
@@ -14,7 +14,7 @@ afterAll(() => server.close());
 
 describe("forceLogout", () => {
   it("calls rpc/force_logout and returns revokedSessions count", async () => {
-    let body: any = null;
+    let body: unknown = null;
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/force_logout", async ({ request }) => {
         body = await request.json();
