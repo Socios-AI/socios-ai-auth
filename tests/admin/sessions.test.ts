@@ -18,17 +18,18 @@ describe("forceLogout", () => {
     server.use(
       http.post("https://test.supabase.co/rest/v1/rpc/force_logout", async ({ request }) => {
         body = await request.json();
-        return HttpResponse.json(3);
+        // The prod RPC returns void; simulate with null.
+        return HttpResponse.json(null);
       }),
     );
     const { forceLogout } = await import("../../src/admin/sessions");
     const result = await forceLogout({
-      targetUserId: "u1",
-      reason: "Compromised account",
+      targetUserId: "u-1",
+      reason: "violated terms of service",
       callerJwt: "j",
     });
-    expect(body).toEqual({ p_target_user_id: "u1", p_reason: "Compromised account" });
-    expect(result).toEqual({ revokedSessions: 3 });
+    expect(body).toEqual({ p_user_id: "u-1", p_reason: "violated terms of service" });
+    expect(result).toEqual({ revokedSessions: 0 });
   });
 
   it("throws on missing required args", async () => {

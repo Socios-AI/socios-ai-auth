@@ -11,8 +11,8 @@ export async function forceLogout(args: {
   if (!args.reason || args.reason.trim().length < 5) throw new Error("reason must be at least 5 chars");
 
   const sb = getCallerClient({ callerJwt: args.callerJwt });
-  const { data, error } = await sb.rpc("force_logout", {
-    p_target_user_id: args.targetUserId,
+  const { error } = await sb.rpc("force_logout", {
+    p_user_id: args.targetUserId,
     p_reason: args.reason,
   });
   if (error) {
@@ -22,5 +22,6 @@ export async function forceLogout(args: {
       (error as { status?: number }).status ?? 0,
     );
   }
-  return { revokedSessions: typeof data === "number" ? data : 0 };
+  // RPC returns void; we don't yet surface a per-session count.
+  return { revokedSessions: 0 };
 }
