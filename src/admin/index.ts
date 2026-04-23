@@ -6,4 +6,5 @@ export type { CallerClientOptions } from "./caller-client";
 export { startImpersonation, endImpersonation } from "./impersonation";
 export { forceLogout } from "./sessions";
 export { grantMembership, revokeMembership } from "./memberships";
+export { promoteToSuperAdmin, demoteFromSuperAdmin } from "./super-admin";
 export { createUserWithMembership } from "./users";
