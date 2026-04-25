@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.2.4 · 2026-04-25
+
+### Changed
+
+- `getSupabaseBrowserClient` now configures the underlying Supabase client with `auth.flowType: "implicit"`. This makes email-based recovery, invite, and confirmation links work cross-browser: the user can request a reset on one device and click the email on another. The PKCE flow (the previous default in `@supabase/ssr`) binds a code verifier to the originating browser's localStorage, which silently breaks recovery whenever the user opens the email anywhere else.
+- The trade-off is a marginal reduction in OAuth security, which we don't use (OAuth was revoked in Plan C). Recovery / invite / signup tokens remain single-use and short-TTL on the server.
+
+### Backwards compatibility
+
+Public API surface unchanged. Behavior change is in the underlying Supabase client config — consumers will see recovery email links resolve correctly even when opened in a different browser.
+
+## v0.2.3 · 2026-04-22
+
+### Added
+
+- `promoteToSuperAdmin` and `demoteFromSuperAdmin` admin helpers.
+
 ## v0.2.2 · 2026-04-22
 
 ### Added
