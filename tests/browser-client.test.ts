@@ -71,10 +71,10 @@ describe("cookieOptions.domain", () => {
     });
   });
 
-  it("omits cookieOptions when not provided (backwards compatible)", () => {
+  it("omits cookieOptions when not provided (still passes auth flowType)", () => {
     getSupabaseBrowserClient();
     const callArgs = mockCreateBrowserClient.mock.calls[0];
-    expect(callArgs[2]).toBeUndefined();
+    expect(callArgs[2]).toEqual({ auth: { flowType: "implicit" } });
   });
 });
 
@@ -120,8 +120,10 @@ describe("cookieOptions env var fallback (v0.2.1)", () => {
     });
   });
 
-  it("omits cookieOptions when no env vars and no opts (backwards compatible)", () => {
+  it("omits cookieOptions when no env vars and no opts (still passes auth flowType)", () => {
     getSupabaseBrowserClient();
-    expect(mockCreateBrowserClient.mock.calls[0][2]).toBeUndefined();
+    expect(mockCreateBrowserClient.mock.calls[0][2]).toEqual({
+      auth: { flowType: "implicit" },
+    });
   });
 });

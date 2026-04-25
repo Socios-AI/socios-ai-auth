@@ -42,8 +42,15 @@ export function getSupabaseBrowserClient(opts: GetBrowserClientOptions = {}): Su
   }
 
   const cookieOptions = opts.cookieOptions ?? readCookieOptionsFromEnv();
+  // Use the implicit flow rather than PKCE so that email-based recovery,
+  // invite, and confirmation links work cross-browser. PKCE binds the
+  // verifier to the browser that originated the request, which breaks the
+  // common case of a user requesting reset on one device and clicking the
+  // email on another. We don't use OAuth, so the trade-off is minor; the
+  // recovery / signup tokens remain single-use and short-TTL on the server.
+  const auth = { flowType: "implicit" as const };
   if (cookieOptions) {
-    return createBrowserClient(url, anonKey, { cookieOptions });
+    return createBrowserClient(url, anonKey, { cookieOptions, auth });
   }
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient(url, anonKey, { auth });
 }
