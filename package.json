@@ -1,6 +1,6 @@
 {
   "name": "@socios-ai/auth",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Auth helpers and React hooks for Sócios AI Identity (Supabase-based).",
   "license": "MIT",
   "repository": {

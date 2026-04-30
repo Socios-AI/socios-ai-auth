@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.6 · 2026-04-30
+
+### Added
+
+- `getSupabaseImplicitClient(opts?)` exported from the package entrypoint. Returns a one-shot Supabase client built directly from `@supabase/supabase-js` (bypassing `@supabase/ssr`) with `flowType: "implicit"` and session persistence disabled. Use it for `resetPasswordForEmail` and similar email-link issuers where PKCE's same-browser-context binding breaks the cross-device flow (request reset on desktop, click email on phone).
+
+### Why
+
+`getSupabaseBrowserClient` has set `flowType: "implicit"` since v0.2.4, but `@supabase/ssr` v0.5+ silently overrides it to `"pkce"` (acknowledged in v0.2.5 notes). Recovery emails consequently produced PKCE links that fail with HTTP 400 from `/auth/v1/token?grant_type=pkce` whenever the email is opened in a different browser context than the one that originated the request. There is no way to fix this from `getSupabaseBrowserClient` while remaining on `@supabase/ssr` v0.5+, so this release adds a separate, narrowly-scoped client just for the request side. The consumer side (`useTokenConsumption`) already supports the resulting `#access_token=&refresh_token=` redirect via `setSession`.
+
+### Backwards compatibility
+
+Pure addition. `getSupabaseBrowserClient` is unchanged. Consumers must explicitly opt into the new helper for the recovery-request call site; existing code paths still go through `@supabase/ssr`.
+
 ## v0.2.5 · 2026-04-30
 
 ### Fixed
