@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.5 · 2026-04-30
+
+### Fixed
+
+- `useTokenConsumption` now handles the PKCE redirect shape (`?code=<auth_code>`) by calling `supabase.auth.exchangeCodeForSession`. v0.2.4 set `flowType: "implicit"` on the browser client, but `@supabase/ssr` v0.5+ hard-overrides this to `"pkce"` after the user's options spread, so recovery email links were unconsumed and the `/reset` page silently fell back to the request-email form (`MISSING_TOKEN`).
+- The hook also now classifies the PKCE error redirect (`?error=access_denied&error_code=otp_expired&...`) into `EXPIRED` / `INVALID` instead of leaving the user at `MISSING_TOKEN` after they click an expired link.
+
+### Backwards compatibility
+
+Pure addition. Existing hash-token (implicit) and `?token_hash=` (OTP) paths are untouched and still take precedence in `source: "auto"` mode.
+
+### Notes
+
+The `flowType: "implicit"` config introduced in v0.2.4 is now effectively a no-op (overridden by `@supabase/ssr`), but kept in place defensively in case a future `@supabase/ssr` release respects user-supplied options. The cross-browser claim from v0.2.4's notes only held under the assumption that override; in practice PKCE binds the code verifier to the originating browser. PKCE remains the deployed flow for now (more secure under the same-browser assumption); a future change could migrate to magic-link OTP if cross-browser becomes a hard requirement.
+
 ## v0.2.4 · 2026-04-25
 
 ### Changed

@@ -83,6 +83,47 @@ export function useTokenConsumption(opts: UseTokenConsumptionOptions): {
         return;
       }
 
+      // PKCE error redirect (e.g. ?error=access_denied&error_code=otp_expired&...)
+      // @supabase/ssr v0.5+ forces flowType="pkce" for browser clients, so we
+      // also have to handle that branch here. The error can land in the hash
+      // (legacy) or in the query (current PKCE).
+      const queryError = queryParams.get("error");
+      const hashError = hashParams.get("error");
+      const errorParam = queryError ?? hashError;
+      if (tryQuery && errorParam) {
+        const desc = queryParams.get("error_description") ?? hashParams.get("error_description") ?? errorParam;
+        setS({ state: "error", errorCode: classifySupabaseError(desc) });
+        return;
+      }
+
+      // PKCE success redirect: GoTrue exchanges the pkce_<token> in the email
+      // for a one-time auth code and redirects to <redirect_to>?code=<uuid>.
+      // We then call exchangeCodeForSession which uses the locally-stored
+      // code_verifier to mint a session.
+      const queryCode = queryParams.get("code");
+      if (tryQuery && queryCode) {
+        // Best-effort type inference: prefer ?type= if GoTrue ever adds it,
+        // otherwise fall back to the only accepted type for this hook.
+        const inferredType = queryParams.get("type") ?? opts.acceptedTypes[0];
+        if (!inferredType || !opts.acceptedTypes.includes(inferredType)) {
+          setS({ state: "error", errorCode: "INVALID" });
+          return;
+        }
+        const { error } = await supabase.auth.exchangeCodeForSession(queryCode);
+        if (error) {
+          setS({ state: "error", errorCode: classifySupabaseError(error.message) });
+          return;
+        }
+        // Scrub the auth code from the URL so a refresh doesn't re-attempt
+        // and so it doesn't sit visible in history.
+        const cleanParams = new URLSearchParams(window.location.search);
+        cleanParams.delete("code");
+        const newSearch = cleanParams.toString() ? `?${cleanParams.toString()}` : "";
+        window.history.replaceState(null, "", window.location.pathname + newSearch);
+        setS({ state: "ready", resolvedType: inferredType });
+        return;
+      }
+
       setS({ state: "error", errorCode: "MISSING_TOKEN" });
     }
     consume();
