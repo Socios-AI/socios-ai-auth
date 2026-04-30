@@ -27,16 +27,19 @@ function setQuery(search: string) {
 
 const mockSetSession = vi.fn();
 const mockVerifyOtp = vi.fn();
+const mockExchangeCodeForSession = vi.fn();
 
 beforeEach(() => {
   vi.mocked(getSupabaseBrowserClient).mockReturnValue({
     auth: {
       setSession: mockSetSession,
       verifyOtp: mockVerifyOtp,
+      exchangeCodeForSession: mockExchangeCodeForSession,
     },
   } as unknown as ReturnType<typeof getSupabaseBrowserClient>);
   mockSetSession.mockReset();
   mockVerifyOtp.mockReset();
+  mockExchangeCodeForSession.mockReset();
 });
 
 afterEach(() => {
@@ -94,5 +97,71 @@ describe("useTokenConsumption", () => {
     await waitFor(() => expect(result.current.state).toBe("ready"));
     expect(mockSetSession).toHaveBeenCalled();
     expect(mockVerifyOtp).not.toHaveBeenCalled();
+  });
+
+  describe("PKCE flow (?code=)", () => {
+    it("calls exchangeCodeForSession with the code and resolves to acceptedTypes[0]", async () => {
+      setQuery("code=4dc39817-1aad-4c10-9c3f-a2edd70fd38b");
+      mockExchangeCodeForSession.mockResolvedValueOnce({ error: null });
+      const { result } = renderHook(() => useTokenConsumption({ acceptedTypes: ["recovery"] }));
+      await waitFor(() => expect(result.current.state).toBe("ready"));
+      expect(mockExchangeCodeForSession).toHaveBeenCalledWith(
+        "4dc39817-1aad-4c10-9c3f-a2edd70fd38b",
+      );
+      expect(result.current.resolvedType).toBe("recovery");
+    });
+
+    it("transitions to EXPIRED when exchangeCodeForSession returns expired error", async () => {
+      setQuery("code=expired-code");
+      mockExchangeCodeForSession.mockResolvedValueOnce({
+        error: { message: "auth code is invalid or expired" },
+      });
+      const { result } = renderHook(() => useTokenConsumption({ acceptedTypes: ["recovery"] }));
+      await waitFor(() => expect(result.current.state).toBe("error"));
+      expect(result.current.errorCode).toBe("EXPIRED");
+    });
+
+    it("uses ?type= when present and validates against acceptedTypes", async () => {
+      setQuery("code=abc&type=invite");
+      mockExchangeCodeForSession.mockResolvedValueOnce({ error: null });
+      const { result } = renderHook(() =>
+        useTokenConsumption({ acceptedTypes: ["invite", "recovery"] }),
+      );
+      await waitFor(() => expect(result.current.state).toBe("ready"));
+      expect(result.current.resolvedType).toBe("invite");
+    });
+
+    it("rejects when ?type= is set but not in acceptedTypes", async () => {
+      setQuery("code=abc&type=signup");
+      const { result } = renderHook(() => useTokenConsumption({ acceptedTypes: ["recovery"] }));
+      await waitFor(() => expect(result.current.state).toBe("error"));
+      expect(result.current.errorCode).toBe("INVALID");
+      expect(mockExchangeCodeForSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("error redirect (?error=)", () => {
+    it("classifies otp_expired as EXPIRED", async () => {
+      setQuery(
+        "error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired",
+      );
+      const { result } = renderHook(() => useTokenConsumption({ acceptedTypes: ["recovery"] }));
+      await waitFor(() => expect(result.current.state).toBe("error"));
+      expect(result.current.errorCode).toBe("EXPIRED");
+    });
+
+    it("classifies generic error as INVALID", async () => {
+      setQuery("error=access_denied&error_description=something+went+wrong");
+      const { result } = renderHook(() => useTokenConsumption({ acceptedTypes: ["recovery"] }));
+      await waitFor(() => expect(result.current.state).toBe("error"));
+      expect(result.current.errorCode).toBe("INVALID");
+    });
+
+    it("also reads error from hash (legacy implicit flow shape)", async () => {
+      setHash("#error=access_denied&error_code=otp_expired&error_description=expired");
+      const { result } = renderHook(() => useTokenConsumption({ acceptedTypes: ["recovery"] }));
+      await waitFor(() => expect(result.current.state).toBe("error"));
+      expect(result.current.errorCode).toBe("EXPIRED");
+    });
   });
 });
