@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.2.8 · 2026-05-01
+
+### Added
+
+- `useMfaEnroll(opts?: { friendlyName?: string })` now accepts an optional `friendlyName` that is forwarded to `supabase.auth.mfa.enroll`. Default: `"Sócios AI"`.
+
+### Why
+
+Without a `friendlyName`, Supabase falls back to the project ref as the TOTP factor label, so authenticator apps (iOS Passwords, 1Password, Authy, Google Authenticator) display something like `axyssxqttfnbtawanasf` instead of a recognizable account name. Users with multiple project accounts can't tell which code belongs to which app. GAP-02 from the 2026-04-25 UAT.
+
+### How to use per-consumer
+
+Pass a per-app value when integrating from a consumer so the user sees which app the code belongs to:
+
+```ts
+useMfaEnroll({ friendlyName: "CASE-PREDICTOR" })
+```
+
+### Backwards compatibility
+
+Pure addition. Existing call sites (`useMfaEnroll()` no args) get the new default label automatically; no breaking change.
+
 ## v0.2.7 · 2026-05-01
 
 ### Changed

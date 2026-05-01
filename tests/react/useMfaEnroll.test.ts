@@ -112,4 +112,32 @@ describe("useMfaEnroll", () => {
     rerender();
     await waitFor(() => expect(enrollMock).toHaveBeenCalledTimes(1));
   });
+
+  it("passes default friendlyName 'Sócios AI' to enroll", async () => {
+    enrollMock.mockResolvedValue({
+      data: { id: "f1", type: "totp", totp: { qr_code: "x", secret: "S", uri: "U" } },
+      error: null,
+    });
+    const { useMfaEnroll } = await import("../../src/react/useMfaEnroll");
+    renderHook(() => useMfaEnroll());
+    await waitFor(() => expect(enrollMock).toHaveBeenCalled());
+    expect(enrollMock).toHaveBeenCalledWith({
+      factorType: "totp",
+      friendlyName: "Sócios AI",
+    });
+  });
+
+  it("passes a custom friendlyName when provided", async () => {
+    enrollMock.mockResolvedValue({
+      data: { id: "f1", type: "totp", totp: { qr_code: "x", secret: "S", uri: "U" } },
+      error: null,
+    });
+    const { useMfaEnroll } = await import("../../src/react/useMfaEnroll");
+    renderHook(() => useMfaEnroll({ friendlyName: "CASE-PREDICTOR" }));
+    await waitFor(() => expect(enrollMock).toHaveBeenCalled());
+    expect(enrollMock).toHaveBeenCalledWith({
+      factorType: "totp",
+      friendlyName: "CASE-PREDICTOR",
+    });
+  });
 });
