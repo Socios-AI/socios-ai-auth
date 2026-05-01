@@ -7,9 +7,18 @@ import type { AuthErrorCode } from "../types";
 
 export type UseResetPasswordOptions = {
   onError?: (code: AuthErrorCode) => void;
+  // Path to the host app's password reset endpoint. Defaults to
+  // "/api/auth/reset-password". The endpoint must accept POST { password }
+  // and trust the cookie session to identify the user. This indirection
+  // exists because Supabase MFA enforcement makes auth.updateUser require
+  // AAL2, which the recovery flow cannot satisfy — the host app rotates
+  // the password via the admin API instead.
+  resetEndpoint?: string;
 };
 
 type SubmitState = "idle" | "submitting" | "success" | "lastError";
+
+const DEFAULT_RESET_ENDPOINT = "/api/auth/reset-password";
 
 export function useResetPassword(opts: UseResetPasswordOptions = {}): {
   state: "initial" | "ready" | "submitting" | "success" | "error";
@@ -31,14 +40,26 @@ export function useResetPassword(opts: UseResetPasswordOptions = {}): {
   async function doSubmit(newPassword: string): Promise<void> {
     setSubmit("submitting");
     setSubmitErr(undefined);
-    const supabase = getSupabaseBrowserClient();
-    const { error: updateErr } = await supabase.auth.updateUser({ password: newPassword });
-    if (updateErr) {
+    const endpoint = opts.resetEndpoint ?? DEFAULT_RESET_ENDPOINT;
+    let ok = false;
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+        credentials: "same-origin",
+      });
+      ok = res.ok;
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
       setSubmit("lastError");
       setSubmitErr("API_ERROR");
       opts.onError?.("API_ERROR");
       return;
     }
+    const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
     setSubmit("success");
   }

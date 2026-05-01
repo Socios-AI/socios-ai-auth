@@ -9,20 +9,20 @@ vi.mock("../../src/browser/client", () => ({
 import { getSupabaseBrowserClient } from "../../src/browser/client";
 
 const mockSetSession = vi.fn();
-const mockUpdateUser = vi.fn();
 const mockSignOut = vi.fn();
+const mockFetch = vi.fn();
 
 beforeEach(() => {
   vi.mocked(getSupabaseBrowserClient).mockReturnValue({
     auth: {
       setSession: mockSetSession,
-      updateUser: mockUpdateUser,
       signOut: mockSignOut,
     },
   } as unknown as ReturnType<typeof getSupabaseBrowserClient>);
   mockSetSession.mockReset();
-  mockUpdateUser.mockReset();
   mockSignOut.mockReset();
+  mockFetch.mockReset();
+  globalThis.fetch = mockFetch as unknown as typeof fetch;
   Object.defineProperty(window, "location", {
     writable: true,
     value: { hash: "#access_token=AT&refresh_token=RT&type=recovery", search: "", pathname: "/" },
@@ -43,24 +43,55 @@ describe("useResetPassword", () => {
     expect(result.current.errorCode).toBe("EXPIRED");
   });
 
-  it("submit transitions ready -> submitting -> success on success", async () => {
+  it("submit posts to default endpoint and goes to success on 200", async () => {
     mockSetSession.mockResolvedValueOnce({ error: null });
-    mockUpdateUser.mockResolvedValueOnce({ error: null });
+    mockFetch.mockResolvedValueOnce({ ok: true } as Response);
     mockSignOut.mockResolvedValueOnce({ error: null });
     const { result } = renderHook(() => useResetPassword());
     await waitFor(() => expect(result.current.state).toBe("ready"));
-    await act(async () => { await result.current.submit("NewPass1!"); });
+    await act(async () => { await result.current.submit("NewPass1!ab"); });
     expect(result.current.state).toBe("success");
-    expect(mockUpdateUser).toHaveBeenCalledWith({ password: "NewPass1!" });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/auth/reset-password",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ password: "NewPass1!ab" }),
+        credentials: "same-origin",
+      }),
+    );
     expect(mockSignOut).toHaveBeenCalled();
   });
 
-  it("submit returns to ready with API_ERROR on updateUser failure", async () => {
+  it("submit uses custom resetEndpoint when provided", async () => {
     mockSetSession.mockResolvedValueOnce({ error: null });
-    mockUpdateUser.mockResolvedValueOnce({ error: { message: "boom" } });
+    mockFetch.mockResolvedValueOnce({ ok: true } as Response);
+    mockSignOut.mockResolvedValueOnce({ error: null });
+    const { result } = renderHook(() => useResetPassword({ resetEndpoint: "/custom/reset" }));
+    await waitFor(() => expect(result.current.state).toBe("ready"));
+    await act(async () => { await result.current.submit("NewPass1!ab"); });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/custom/reset",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("submit returns to ready with API_ERROR on non-ok response", async () => {
+    mockSetSession.mockResolvedValueOnce({ error: null });
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 } as Response);
     const { result } = renderHook(() => useResetPassword());
     await waitFor(() => expect(result.current.state).toBe("ready"));
-    await act(async () => { await result.current.submit("NewPass1!"); });
+    await act(async () => { await result.current.submit("NewPass1!ab"); });
+    expect(result.current.state).toBe("ready");
+    expect(result.current.errorCode).toBe("API_ERROR");
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it("submit returns to ready with API_ERROR when fetch throws", async () => {
+    mockSetSession.mockResolvedValueOnce({ error: null });
+    mockFetch.mockRejectedValueOnce(new Error("network down"));
+    const { result } = renderHook(() => useResetPassword());
+    await waitFor(() => expect(result.current.state).toBe("ready"));
+    await act(async () => { await result.current.submit("NewPass1!ab"); });
     expect(result.current.state).toBe("ready");
     expect(result.current.errorCode).toBe("API_ERROR");
     expect(mockSignOut).not.toHaveBeenCalled();

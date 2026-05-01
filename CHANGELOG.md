@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.2.7 · 2026-05-01
+
+### Changed
+
+- `useResetPassword.submit` no longer calls `supabase.auth.updateUser({ password })` directly. It now POSTs to a host-app endpoint (default `/api/auth/reset-password`) that performs the password rotation via the Supabase admin API. Endpoint is configurable via `useResetPassword({ resetEndpoint: "..." })`.
+
+### Why
+
+Plan G.6 turned on Supabase MFA enforcement, which makes `auth.updateUser({ password })` reject any session below AAL2 with `insufficient_aal` (`AAL2 session is required to update email or password when MFA is enabled.`). The recovery flow only mints AAL1 (the email link is the recovery factor; it does not satisfy MFA), so MFA-enrolled users hit a catch-22: they cannot reset their password because the second factor required to authorize the reset is itself the password they just lost (or its sibling TOTP, which they may also not have if they are recovering from a device loss).
+
+Possession of the recovery email is independent evidence of identity sufficient to authorize a password rotation. The host app's endpoint reads the current cookie session (written by `useTokenConsumption.setSession`), uses it to identify the user, and rotates the password through the admin API which is not subject to AAL checks. This preserves MFA enforcement everywhere else and unblocks recovery for MFA users.
+
+### Required host-app contract
+
+The host app MUST expose a route at the configured endpoint (default `/api/auth/reset-password`) that:
+- Accepts `POST { password: string }`.
+- Verifies the requester via the cookie session.
+- Rotates the password (e.g. `supabase.auth.admin.updateUserById(user.id, { password })`).
+- Returns 2xx on success, non-2xx on failure.
+
+Identity-web ships such a route as of this release. Other consumers of `useResetPassword` MUST add one before upgrading.
+
+### Backwards compatibility
+
+Breaking for consumers that do not provide the endpoint. The hook still calls `supabase.auth.signOut()` after a successful rotation, so observable session-cleanup behavior is unchanged.
+
 ## v0.2.6 · 2026-04-30
 
 ### Added
