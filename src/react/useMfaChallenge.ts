@@ -48,7 +48,10 @@ export function useMfaChallenge(): UseMfaChallengeReturn {
   }, []);
 
   async function submit(code: string): Promise<void> {
-    if (!factorIdRef.current || state === "error") return;
+    // Block only an in-flight submit. A previous "error" must NOT lock the form:
+    // the user retypes a fresh code and retries (NO_FACTOR is covered by the
+    // null factorId check, so that terminal case still no-ops).
+    if (!factorIdRef.current || state === "submitting") return;
     setState("submitting");
     setErrorCode(null);
     const sb = getSupabaseBrowserClient();
