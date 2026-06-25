@@ -65,6 +65,34 @@ describe("useMfaChallenge", () => {
     expect(result.current.errorCode).toBe("INVALID_CODE");
   });
 
+  it("allows a retry after an invalid-code error (does not lock the form)", async () => {
+    listFactorsMock.mockResolvedValue({
+      data: { all: [{ id: "f1", factor_type: "totp", status: "verified" }], totp: [{ id: "f1", factor_type: "totp", status: "verified" }] },
+      error: null,
+    });
+    challengeMock.mockResolvedValue({ data: { id: "ch1", expires_at: 9999 }, error: null });
+    verifyMock
+      .mockResolvedValueOnce({ data: null, error: { message: "Invalid TOTP code", status: 400 } })
+      .mockResolvedValueOnce({ data: { access_token: "t", refresh_token: "r" }, error: null });
+
+    const { useMfaChallenge } = await import("../../src/react/useMfaChallenge");
+    const { result } = renderHook(() => useMfaChallenge());
+    await waitFor(() => expect(result.current.state).toBe("ready"));
+
+    await act(async () => {
+      await result.current.submit("000000");
+    });
+    expect(result.current.state).toBe("error");
+    expect(result.current.errorCode).toBe("INVALID_CODE");
+
+    // Retrying with the correct code must work without a page refresh.
+    await act(async () => {
+      await result.current.submit("123456");
+    });
+    expect(result.current.state).toBe("success");
+    expect(verifyMock).toHaveBeenCalledTimes(2);
+  });
+
   it("submit() noops when state is 'error' (no factor)", async () => {
     listFactorsMock.mockResolvedValue({ data: { all: [], totp: [] }, error: null });
     const { useMfaChallenge } = await import("../../src/react/useMfaChallenge");
