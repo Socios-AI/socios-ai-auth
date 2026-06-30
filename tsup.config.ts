@@ -5,6 +5,7 @@ export default defineConfig({
     "index": "src/index.ts",
     "react/index": "src/react/index.ts",
     "admin/index": "src/admin/index.ts",
+    "next/index": "src/next/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
@@ -12,5 +13,5 @@ export default defineConfig({
   sourcemap: true,
   treeshake: true,
   splitting: false,
-  external: ["react", "@supabase/ssr", "@supabase/supabase-js", "zod"],
+  external: ["react", "@supabase/ssr", "@supabase/supabase-js", "zod", "next", "next/server", "next/headers"],
 });
