@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "../browser/client";
+import { decodeJwtPayload } from "../edge/index";
 
 type GateState = {
   isSuper: boolean;
@@ -9,23 +10,9 @@ type GateState = {
   needsMfaChallenge: boolean;
 };
 
-function decodeJwt(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    const payload = parts[1];
-    if (!payload) return null;
-    const decoded = typeof atob === "function"
-      ? atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
-      : Buffer.from(payload, "base64url").toString("utf-8");
-    return JSON.parse(decoded);
-  } catch {
-    return null;
-  }
-}
-
 function compute(token: string | null): GateState {
   if (!token) return { isSuper: false, canImpersonate: false, needsMfaChallenge: false };
-  const claims = decodeJwt(token);
+  const claims = decodeJwtPayload<Record<string, unknown>>(token);
   if (!claims) return { isSuper: false, canImpersonate: false, needsMfaChallenge: false };
   // The custom access token hook emits the claim as `super_admin`
   // (see identity migration 20260510000001). Reading `is_super_admin`
