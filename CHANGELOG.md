@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.1 · 2026-07-03
+
+### Fixed
+
+- `useImpersonationGate` now reads the `super_admin` claim (the one the custom access token hook actually emits, per identity migration `20260510000001`) instead of `is_super_admin`, which was never present. The gate was permanently `isSuper: false` in production, silently disabling the impersonation UI for super-admins. Tests updated (they had encoded the same wrong claim name) plus a regression test that the legacy `is_super_admin` claim no longer enables the gate.
+
+> Note: this file was stale between v0.2.8 and v0.5.0. Those releases (`@socios-ai/auth/next` `signOutResponse`, cross-subdomain cookie work, etc.) shipped without changelog entries.
+
 ## v0.2.8 · 2026-05-01
 
 ### Added

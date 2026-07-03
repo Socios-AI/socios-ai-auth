@@ -26,7 +26,7 @@ describe("useImpersonationGate", () => {
       data: {
         session: {
           access_token: makeJwt({
-            is_super_admin: true,
+            super_admin: true,
             amr: [{ method: "password" }, { method: "totp", timestamp: 1234567890 }],
           }),
         },
@@ -44,7 +44,7 @@ describe("useImpersonationGate", () => {
     getSessionMock.mockResolvedValue({
       data: {
         session: {
-          access_token: makeJwt({ is_super_admin: true, amr: [{ method: "password" }] }),
+          access_token: makeJwt({ super_admin: true, amr: [{ method: "password" }] }),
         },
       },
       error: null,
@@ -59,7 +59,7 @@ describe("useImpersonationGate", () => {
   it("returns isSuper=false for normal user", async () => {
     getSessionMock.mockResolvedValue({
       data: {
-        session: { access_token: makeJwt({ is_super_admin: false, amr: [{ method: "password" }] }) },
+        session: { access_token: makeJwt({ super_admin: false, amr: [{ method: "password" }] }) },
       },
       error: null,
     });
@@ -69,6 +69,22 @@ describe("useImpersonationGate", () => {
     expect(result.current.isSuper).toBe(false);
     expect(result.current.canImpersonate).toBe(false);
     expect(result.current.needsMfaChallenge).toBe(false);
+  });
+
+  it("ignores the legacy is_super_admin claim (regression: hook emits super_admin)", async () => {
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          access_token: makeJwt({ is_super_admin: true, amr: [{ method: "totp" }] }),
+        },
+      },
+      error: null,
+    });
+    const { useImpersonationGate } = await import("../../src/react/useImpersonationGate");
+    const { result } = renderHook(() => useImpersonationGate());
+    await waitFor(() => expect(getSessionMock).toHaveBeenCalled());
+    expect(result.current.isSuper).toBe(false);
+    expect(result.current.canImpersonate).toBe(false);
   });
 
   it("returns all false when no session", async () => {
@@ -83,11 +99,11 @@ describe("useImpersonationGate", () => {
   it("refresh() re-reads the session and updates state", async () => {
     getSessionMock
       .mockResolvedValueOnce({
-        data: { session: { access_token: makeJwt({ is_super_admin: true, amr: [{ method: "password" }] }) } },
+        data: { session: { access_token: makeJwt({ super_admin: true, amr: [{ method: "password" }] }) } },
         error: null,
       })
       .mockResolvedValueOnce({
-        data: { session: { access_token: makeJwt({ is_super_admin: true, amr: [{ method: "password" }, { method: "totp" }] }) } },
+        data: { session: { access_token: makeJwt({ super_admin: true, amr: [{ method: "password" }, { method: "totp" }] }) } },
         error: null,
       });
 
