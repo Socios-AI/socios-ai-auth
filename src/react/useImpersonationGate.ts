@@ -27,7 +27,10 @@ function compute(token: string | null): GateState {
   if (!token) return { isSuper: false, canImpersonate: false, needsMfaChallenge: false };
   const claims = decodeJwt(token);
   if (!claims) return { isSuper: false, canImpersonate: false, needsMfaChallenge: false };
-  const isSuper = claims["is_super_admin"] === true;
+  // The custom access token hook emits the claim as `super_admin`
+  // (see identity migration 20260510000001). Reading `is_super_admin`
+  // here made this gate permanently false in production.
+  const isSuper = claims["super_admin"] === true;
   const amr = Array.isArray(claims["amr"]) ? (claims["amr"] as Array<{ method?: string }>) : [];
   const hasTotp = amr.some((entry) => entry?.method === "totp");
   return {
