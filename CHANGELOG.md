@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.1 · 2026-07-03
+
+### Changed
+
+- `useImpersonationGate` now decodes the session JWT via the shared `@socios-ai/auth/edge` `decodeJwtPayload` instead of an inline copy. This was the last remaining duplicate of the decoder. Behavior-preserving: the gate outcome is identical for all well-formed tokens (verified by the existing test suite); a garbage token still yields `isSuper:false` because `{}["super_admin"] !== true`.
+
 ## v0.6.0 · 2026-07-03
 
 ### Added
