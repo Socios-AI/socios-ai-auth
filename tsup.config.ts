@@ -6,6 +6,7 @@ export default defineConfig({
     "react/index": "src/react/index.ts",
     "admin/index": "src/admin/index.ts",
     "next/index": "src/next/index.ts",
+    "edge/index": "src/edge/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

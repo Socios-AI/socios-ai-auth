@@ -1,6 +1,6 @@
 {
   "name": "@socios-ai/auth",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Auth helpers and React hooks for Sócios AI Identity (Supabase-based).",
   "license": "MIT",
   "repository": {
@@ -50,6 +50,16 @@
       "require": {
         "types": "./dist/next/index.d.cts",
         "default": "./dist/next/index.cjs"
+      }
+    },
+    "./edge": {
+      "import": {
+        "types": "./dist/edge/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "require": {
+        "types": "./dist/edge/index.d.cts",
+        "default": "./dist/edge/index.cjs"
       }
     }
   },

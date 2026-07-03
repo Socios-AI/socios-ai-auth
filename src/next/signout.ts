@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { sessionCookieName } from "../edge/index";
 
 const ID_LOGIN = "https://id.sociosai.com/login";
 const COOKIE_DOMAIN = ".sociosai.com";
@@ -21,17 +22,14 @@ const COOKIE_DOMAIN = ".sociosai.com";
  */
 export async function signOutResponse(opts: { from: string }): Promise<NextResponse> {
   const cookieStore = await cookies();
-  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
-    ?.replace(/^https?:\/\//, "")
-    .split(".")[0];
+  const baseName = sessionCookieName(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
   const target = new URL(ID_LOGIN);
   target.searchParams.set("msg", "logged_out");
   target.searchParams.set("from", opts.from);
   const res = NextResponse.redirect(target, { status: 303 });
 
-  if (projectRef) {
-    const baseName = `sb-${projectRef}-auth-token`;
+  if (baseName) {
     // Clear the base cookie + ANY number of chunks: the reader is unbounded, so a
     // fixed cap would leave orphan chunks. Combine what the browser sent with a
     // defensive fixed range. Domain .sociosai.com matches how login set it.

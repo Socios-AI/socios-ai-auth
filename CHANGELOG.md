@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.6.0 · 2026-07-03
+
+### Added
+
+- New `@socios-ai/auth/edge` subpath: a pure, Edge-safe (zero-dependency, no `next/*` or `@supabase/*` imports) module holding the cross-subdomain SSO session-read contract that consumer apps had been copy-pasting. Exports:
+  - `decodeJwtPayload<T>(token)` — signature-less JWT payload decode. Contract: `null` on structural failure (< 2 segments / non-base64url payload), `{}` on a base64url-valid but non-JSON payload, parsed object otherwise. Runtime-independent (atob with Buffer fallback) so it behaves identically in Edge, Node, and the browser.
+  - `sessionCookieName(url)` — derives `sb-<ref>-auth-token` from the Supabase URL, fail-closed to `null` when the URL is missing.
+  - `readSessionCookie(cookies, baseName)` — reassembles `@supabase/ssr` chunked cookies (`.0`, `.1`, ...).
+  - `extractAccessToken(cookieValue)` — parses the `@supabase/ssr` cookie value shapes (v0.5 Session object / legacy array / `base64-` prefix / bare).
+
+### Changed
+
+- `@socios-ai/auth/next` `signOutResponse` now derives the cookie base name via `sessionCookieName` instead of an inline copy (single source of truth). Behavior unchanged.
+
+### Why
+
+The audit of 2026-07-03 found this JWT/cookie logic duplicated across admin-web, partners-web, and identity-web (plus inline copies), with the decoder already diverging between apps. Centralizing it kills the drift risk on an auth-critical path. Consumers migrate incrementally.
+
 ## v0.5.1 · 2026-07-03
 
 ### Fixed
